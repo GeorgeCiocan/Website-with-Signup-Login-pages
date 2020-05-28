@@ -64,27 +64,35 @@ function Signup() {
     password: ""
   });
 
-  const [submitError, setSubmitError] = useState({}) 
+  const [submitError, setSubmitError] = useState({
+    username: "",
+    email: "",
+    password: ""
+  }) 
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-      
+
     const payload = {
       user
     }
 
-    async function registerUser() {
       try {
         const result = await axios.post("https://conduit.productionready.io/api/users", payload)
         console.log(result.data)
       } catch (error) {
-        setSubmitError(error.response.data.errors);
-        //console.log nu afiseaza update-ul
+        let errorNames = Object.keys(error.response.data.errors)
+        let errorObject = {
+          username: "",
+          email: "",
+          password: ""
+        };
+        errorNames.forEach(name => errorObject[name] = error.response.data.errors[name])
+        console.log(errorObject)
+        setSubmitError(errorObject) 
       }      
-    }
-    registerUser();
-  }  
-  console.log(submitError);
+  }
+  console.log(submitError)
 
   const handleSubmitError = (name) => {
     if (submitError.hasOwnProperty("username") && name ==="username") {
@@ -99,7 +107,10 @@ function Signup() {
   }
 
 
-  const handleChange = (event) => setUser({...user, [event.target.name]: event.target.value});
+  const handleChange = (event) => {
+    setUser({...user, [event.target.name]: event.target.value})
+    setSubmitError({...submitError, [event.target.name]: ""})
+  }
 
   return (
     <div className="signup">
@@ -126,7 +137,7 @@ function Login() {
 
 const FormInput = ({ label, name, type, placeholder, required, minLength, match, onValueChange, value, submitError }) => {
 
-  const [error, setError] = useState("");
+  const [error, setError] = useState();
 
   const handleError = () => {
     if (required) {
