@@ -6,7 +6,6 @@ import {
   Link
 } from 'react-router-dom';
 import axios from 'axios';
-import logo from './logo.svg';
 import './App.css';
 
 
@@ -47,6 +46,9 @@ function App() {
   );
 }
 
+
+
+
 function Home() {
   return <h2>Home</h2>;
 }
@@ -84,7 +86,12 @@ function Signup() {
 
     try {
       const result = await axios.post("https://conduit.productionready.io/api/users", payload)
-      console.log(result.data)
+      console.log(payload.user)
+      setUser({
+        username: "",
+        email: "",
+        password: ""
+      });
     } catch (error) {
       let errorNames = Object.keys(error.response.data.errors)
       let errorObject = {
@@ -158,12 +165,16 @@ function Login() {
     try {
       const result = await axios.post("https://conduit.productionready.io/api/users/login", payload)
       console.log(result.data)
+      setUser({
+        email: "",
+        password: ""
+      });
     } catch (error) {
       let errorObject = error.response.data.errors
       let errorField = Object.keys(errorObject)[0]
       let errorMessage = errorObject[errorField]
       let message = errorField + " " + errorMessage[0]
-      console.log(message)
+
       setSubmitError(message)
     }
   }
@@ -198,7 +209,7 @@ function Login() {
 
 
 
-const FormInput = ({ label, name, type, placeholder, required, onValueChange, value, submitError }) => {
+const FormInput = ({ label, name, type, placeholder, required, minLength, match, onValueChange, value, submitError }) => {
 
   const [error, setError] = useState("");
 
@@ -209,6 +220,36 @@ const FormInput = ({ label, name, type, placeholder, required, onValueChange, va
       return
       } else {
         setError("")
+      }
+    } 
+    if (minLength) {
+      if (value.length < minLength) {
+      setError(`You need to enter at least ${minLength} characters`)
+      return
+      } else {
+        setError("")
+      } 
+    }
+    if(match) {
+        if(!value.match(match) && type==="email") {
+          setError("You must enter a valid email address")
+          return
+        } else {
+          setError("")
+        }      
+        if (type==="password" ) {
+          if (!value.match(match[0])) {
+          setError("The password must contain at least one capital letter")
+          return
+        } if (!value.match(match[1])) {
+          setError("The password must contain at least one small letter")
+          return
+        } else if (!value.match(match[2])) {
+          setError("The password must contain at least one digit")
+          return
+        } else {
+          setError("")
+        }
       } 
     }
   }
