@@ -1,4 +1,4 @@
-import React, { useState, Fragment } from 'react';
+import React, { useState, useEffect, Fragment } from 'react';
 import {
   BrowserRouter as Router,
   Switch,
@@ -10,6 +10,16 @@ import './App.css';
 
 
 function App() {
+
+
+  const [token, setToken] = useState("")
+
+
+  const handleToken = (event) => {
+    setToken(event)
+  }
+
+
   return (
     <Router>
       <div className="App">
@@ -19,12 +29,26 @@ function App() {
             <li>
               <Link to="/">Home</Link>
             </li>
-            <li>
-              <Link to="/signup">Sign up</Link>
-            </li>
+{/*             { token &&
+              <li>
+                <Link to="/newpost">New Post</Link>
+              </li>
+            }
+            { token &&
+              <li>
+                <Link to="/settings">Profile settings</Link>
+              </li>
+            } */}
+            { !token &&
+              <li>
+                <Link to="/signup">Sign up</Link>
+              </li>
+            }
+            { !token &&
             <li>
               <Link to="/login">Login</Link>
             </li>
+            }      
           </ul>
         </nav>
 
@@ -32,13 +56,19 @@ function App() {
             renders the first one that matches the current URL. */}
         <Switch>
           <Route path="/login">
-            <Login />
+            <Login handleToken={handleToken} />
           </Route>
           <Route path="/signup">
             <Signup />
           </Route>
+{/*           <Route path="/settings">
+            <Settings tokenValue={token}/>
+          </Route>
+          <Route path="/newpost">
+            <NewPost tokenValue={token}/>
+          </Route> */}
           <Route path="/">
-            <Home />
+            <Home tokenValue={token} />
           </Route>
         </Switch>
       </div>
@@ -49,10 +79,32 @@ function App() {
 
 
 
-function Home() {
-  return <h2>Home</h2>;
-}
+function Home({ tokenValue }) {  
 
+  const [user, setUser] = useState(null)
+
+  
+  useEffect(() => {
+    const getUser = async () => {
+
+      const result = await axios.get("https://conduit.productionready.io/api/user", 
+      { 'headers': {
+        Accept: 'application/json',
+                  'Content-Type': 'application/json',
+                  'Authorization': `Token ${tokenValue}`,
+          }, })
+      setUser(result.data.user)
+    }
+    if (tokenValue) {
+      getUser()
+    }
+  }, [tokenValue]) 
+
+  console.log(user)
+  return (
+    <h2>Welcome, {user ? user.username : 'Anonymous'}</h2>
+  )
+}
 
 
 
@@ -86,7 +138,7 @@ function Signup() {
 
     try {
       const result = await axios.post("https://conduit.productionready.io/api/users", payload)
-      console.log(payload.user)
+      console.log(result)
       setUser({
         username: "",
         email: "",
@@ -146,7 +198,7 @@ function Signup() {
 
 
 
-function Login() {
+function Login({ handleToken }) {
 
   const [user, setUser] = useState({
     email: "",
@@ -164,7 +216,8 @@ function Login() {
     console.log(payload.user)
     try {
       const result = await axios.post("https://conduit.productionready.io/api/users/login", payload)
-      console.log(result.data)
+      console.log(result)
+      handleToken(result.data.user.token)
       setUser({
         email: "",
         password: ""
@@ -273,7 +326,39 @@ const FormInput = ({ label, name, type, placeholder, required, minLength, match,
   )
 }
 
+const TextArea = ({ label, name, rows, placeholder, required, onValueChange, value, submitError }) => {
 
+  const [error, setError] = useState("");
+
+  const handleError = () => {
+    if (required) {
+      if (value === "") {
+      setError("This field is required")
+      return
+      } else {
+        setError("")
+      }
+    } 
+  }
+
+  return (
+    <Fragment>
+    <label htmlFor={name}>{label}</label> 
+    <span className="error">
+      {submitError ? submitError : error}
+    </span>
+    <textarea 
+      className={error ? "error" : ""}
+      name={name}
+      rows={rows}
+      placeholder={placeholder}
+      value={value} 
+      onChange={onValueChange}
+      onBlur={handleError}
+    />
+    </Fragment>
+    )
+}
 
 
 export default App;
