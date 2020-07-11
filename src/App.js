@@ -1,7 +1,9 @@
-import React, { useState, useEffect, useContext, Fragment } from "react";
+import React, { useState, useEffect, Fragment } from "react";
 import { BrowserRouter as Router, Switch, Route, Link } from "react-router-dom";
 import axios from "axios";
 import "./App.css";
+
+const UserContext = React.createContext(null);
 
 function App() {
   const [token, setToken] = useState("");
@@ -68,33 +70,39 @@ function App() {
 
         {/* A <Switch> looks through its children <Route>s and
             renders the first one that matches the current URL. */}
-        <Switch>
-          <Route path="/login">
-            <Login handleToken={handleToken} />
-          </Route>
-          <Route path="/signup">
-            <Signup />
-          </Route>
-          <Route path="/settings">
-            <Settings tokenValue={token} />
-          </Route>
-          <Route path="/newpost">
-            <NewPost tokenValue={token} />
-          </Route>
-          <Route path="/">
-            <Home tokenValue={token} userDetailes={user} />
-          </Route>
-        </Switch>
+        <UserContext.Provider value={{ user, handleToken }}>
+          <Switch>
+            <Route path="/login">
+              <Login />
+            </Route>
+            <Route path="/signup">
+              <Signup />
+            </Route>
+            <Route path="/settings">
+              <Settings />
+            </Route>
+            <Route path="/newpost">
+              <NewPost />
+            </Route>
+            <Route path="/">
+              <Home />
+            </Route>
+          </Switch>
+        </UserContext.Provider>
       </div>
     </Router>
   );
 }
 
-function Home({ userDetailes }) {
-  return <h2>Welcome, {userDetailes ? userDetailes.username : "Anonymous"}</h2>;
+function Home() {
+  const { user } = React.useContext(UserContext);
+
+  return <h2>Welcome, {user ? user.username : "Anonymous"}</h2>;
 }
 
-function NewPost({ tokenValue }) {
+function NewPost() {
+  const { user } = React.useContext(UserContext);
+
   const [article, setArticle] = useState({
     title: "",
     description: "",
@@ -128,7 +136,7 @@ function NewPost({ tokenValue }) {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
-            Authorization: `Token ${tokenValue}`,
+            Authorization: `Token ${user.token}`,
           },
         }
       );
@@ -222,18 +230,20 @@ function NewPost({ tokenValue }) {
   );
 }
 
-function Settings({ tokenValue }) {
+function Settings() {
   const capitalLetter = /([A-Z])+/g;
   const smallLetter = /([a-z])+/g;
   const digit = /([0-9])+/g;
   const emailMatch = /[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?/g;
 
-  const [user, setUser] = useState({
-    email: "",
-    password: "",
-    username: "",
-    bio: "",
-    image: "",
+  const { user } = React.useContext(UserContext);
+
+  const [userSettings, setUserSettings] = useState({
+    email: user.email,
+    password: user.password,
+    username: user.username,
+    bio: user.bio,
+    image: user.image,
   });
 
   const [submitError, setSubmitError] = useState({
@@ -248,8 +258,7 @@ function Settings({ tokenValue }) {
     event.preventDefault();
 
     let payload = {
-      bio: user.bio,
-      //To be optimized
+      ...userSettings,
     };
 
     console.log(payload);
@@ -262,13 +271,13 @@ function Settings({ tokenValue }) {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
-            Authorization: `Token ${tokenValue}`,
+            Authorization: `Token ${user.token}`,
           },
         }
       );
 
-      console.log(payload.user, result);
-      setUser({
+      console.log(result);
+      setUserSettings({
         email: "",
         password: "",
         username: "",
@@ -294,7 +303,10 @@ function Settings({ tokenValue }) {
   };
 
   const handleChange = (event) => {
-    setUser({ ...user, [event.target.name]: event.target.value });
+    setUserSettings({
+      ...userSettings,
+      [event.target.name]: event.target.value,
+    });
     setSubmitError({ ...submitError, [event.target.name]: "" });
   };
 
@@ -308,14 +320,14 @@ function Settings({ tokenValue }) {
             type="text"
             placeholder="URL of desired profile picture"
             onValueChange={handleChange}
-            value={user.image}
+            value={userSettings.image}
           />
           <TextArea
             name="bio"
             placeholder="Short bio about you"
             rows={6}
             onValueChange={handleChange}
-            value={user.bio}
+            value={userSettings.bio}
           />
           <FormInput
             name="email"
@@ -323,7 +335,7 @@ function Settings({ tokenValue }) {
             placeholder="Change email"
             match={emailMatch}
             onValueChange={handleChange}
-            value={user.email}
+            value={userSettings.email}
             submitError={handleSubmitError("email")}
           />
           {/*           <p>Change password</p>
@@ -468,7 +480,9 @@ function Signup() {
   );
 }
 
-function Login({ handleToken }) {
+function Login() {
+  const { handleToken } = React.useContext(UserContext);
+
   const [user, setUser] = useState({
     email: "",
     password: "",
@@ -488,7 +502,6 @@ function Login({ handleToken }) {
         "https://conduit.productionready.io/api/users/login",
         payload
       );
-      console.log(result);
       handleToken(result.data.user.token);
       setUser({
         email: "",
