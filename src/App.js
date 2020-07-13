@@ -1,5 +1,13 @@
-import React, { useState, useEffect, Fragment } from "react";
-import { BrowserRouter as Router, Switch, Route, Link } from "react-router-dom";
+import React, { useState, useEffect, useContext, Fragment } from "react";
+import {
+  BrowserRouter as Router,
+  Switch,
+  Route,
+  Link,
+  Redirect,
+  useHistory,
+  useLocation,
+} from "react-router-dom";
 import axios from "axios";
 import "./App.css";
 
@@ -70,7 +78,7 @@ function App() {
 
         {/* A <Switch> looks through its children <Route>s and
             renders the first one that matches the current URL. */}
-        <UserContext.Provider value={{ user, handleToken }}>
+        <UserContext.Provider value={{ user, token, handleToken }}>
           <Switch>
             <Route path="/login">
               <Login />
@@ -78,9 +86,11 @@ function App() {
             <Route path="/signup">
               <Signup />
             </Route>
-            <Route path="/settings">
+
+            <AutheticatedRoute path="/settings">
               <Settings />
-            </Route>
+            </AutheticatedRoute>
+
             <Route path="/newpost">
               <NewPost />
             </Route>
@@ -91,6 +101,19 @@ function App() {
         </UserContext.Provider>
       </div>
     </Router>
+  );
+}
+
+function AutheticatedRoute({ path, children }) {
+  const location = useLocation();
+  const { token } = React.useContext(UserContext);
+
+  return token ? (
+    <Route path={path}>{children}</Route>
+  ) : (
+    <Redirect
+      to={{ pathname: "/login", state: { referrer: location.pathname } }}
+    />
   );
 }
 
@@ -366,6 +389,8 @@ function Settings() {
 }
 
 function Signup() {
+  const history = useHistory();
+
   const capitalLetter = /([A-Z])+/g;
   const smallLetter = /([a-z])+/g;
   const digit = /([0-9])+/g;
@@ -401,6 +426,7 @@ function Signup() {
         email: "",
         password: "",
       });
+      history.push("/login");
     } catch (error) {
       let errorNames = Object.keys(error.response.data.errors);
       let errorObject = {
@@ -482,6 +508,8 @@ function Signup() {
 
 function Login() {
   const { handleToken } = React.useContext(UserContext);
+  const location = useLocation();
+  const history = useHistory();
 
   const [user, setUser] = useState({
     email: "",
@@ -489,6 +517,14 @@ function Login() {
   });
 
   const [submitError, setSubmitError] = useState("");
+
+  const goToLocation = () => {
+    if (location.state) {
+      history.push(location.state.referrer);
+    } else {
+      history.push("/");
+    }
+  };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -507,6 +543,7 @@ function Login() {
         email: "",
         password: "",
       });
+      goToLocation();
     } catch (error) {
       let errorObject = error.response.data.errors;
       let errorField = Object.keys(errorObject)[0];
