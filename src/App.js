@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, Fragment } from "react";
+import React, { useState } from "react";
 import {
   BrowserRouter as Router,
   Switch,
@@ -9,6 +9,8 @@ import {
   useLocation,
 } from "react-router-dom";
 import axios from "axios";
+import FormInput from "./Utils/FormInput.js";
+import TextArea from "./Utils/TextArea.js";
 import "./App.css";
 
 const UserContext = React.createContext(null);
@@ -17,7 +19,7 @@ function App() {
   const [token, setToken] = useState("");
   const [user, setUser] = useState(null);
 
-  useEffect(() => {
+  /*   useEffect(() => {
     const getUser = async () => {
       const result = await axios.get(
         "https://conduit.productionready.io/api/user",
@@ -34,12 +36,16 @@ function App() {
     if (token) {
       getUser();
     }
-  }, [token]);
+  }, [token]); */
 
   console.log(user);
 
   const handleToken = (event) => {
     setToken(event);
+  };
+
+  const handleUser = (event) => {
+    setUser(event);
   };
 
   return (
@@ -78,7 +84,7 @@ function App() {
 
         {/* A <Switch> looks through its children <Route>s and
             renders the first one that matches the current URL. */}
-        <UserContext.Provider value={{ user, token, handleToken }}>
+        <UserContext.Provider value={{ user, token, handleToken, handleUser }}>
           <Switch>
             <Route path="/login">
               <Login />
@@ -106,9 +112,9 @@ function App() {
 
 function AutheticatedRoute({ path, children }) {
   const location = useLocation();
-  const { token } = React.useContext(UserContext);
+  const { user } = React.useContext(UserContext);
 
-  return token ? (
+  return user ? (
     <Route path={path}>{children}</Route>
   ) : (
     <Redirect
@@ -507,7 +513,7 @@ function Signup() {
 }
 
 function Login() {
-  const { handleToken } = React.useContext(UserContext);
+  const { handleToken, handleUser } = React.useContext(UserContext);
   const location = useLocation();
   const history = useHistory();
 
@@ -539,10 +545,7 @@ function Login() {
         payload
       );
       handleToken(result.data.user.token);
-      setUser({
-        email: "",
-        password: "",
-      });
+      handleUser(result.data.user);
       goToLocation();
     } catch (error) {
       let errorObject = error.response.data.errors;
@@ -591,118 +594,5 @@ function Login() {
     </div>
   );
 }
-
-const FormInput = ({
-  label,
-  name,
-  type,
-  placeholder,
-  required,
-  minLength,
-  match,
-  onValueChange,
-  value,
-  submitError,
-}) => {
-  const [error, setError] = useState("");
-
-  const handleError = () => {
-    if (required) {
-      if (value === "") {
-        setError("This field is required");
-        return;
-      } else {
-        setError("");
-      }
-    }
-    if (minLength) {
-      if (value.length < minLength) {
-        setError(`You need to enter at least ${minLength} characters`);
-        return;
-      } else {
-        setError("");
-      }
-    }
-    if (match) {
-      if (!value.match(match) && type === "email") {
-        setError("You must enter a valid email address");
-        return;
-      } else {
-        setError("");
-      }
-      if (type === "password") {
-        if (!value.match(match[0])) {
-          setError("The password must contain at least one capital letter");
-          return;
-        }
-        if (!value.match(match[1])) {
-          setError("The password must contain at least one small letter");
-          return;
-        } else if (!value.match(match[2])) {
-          setError("The password must contain at least one digit");
-          return;
-        } else {
-          setError("");
-        }
-      }
-    }
-  };
-
-  return (
-    <Fragment>
-      <label htmlFor={name}>{label}</label>
-      <span className="error">{submitError ? submitError : error}</span>
-      <input
-        className={error ? "error" : ""}
-        type={type}
-        name={name}
-        placeholder={placeholder}
-        value={value}
-        onChange={onValueChange}
-        onBlur={handleError}
-      />
-    </Fragment>
-  );
-};
-
-const TextArea = ({
-  label,
-  name,
-  rows,
-  placeholder,
-  required,
-  onValueChange,
-  value,
-  submitError,
-}) => {
-  const [error, setError] = useState("");
-
-  const handleError = () => {
-    if (required) {
-      if (value === "") {
-        setError("This field is required");
-        return;
-      } else {
-        setError("");
-      }
-    }
-  };
-
-  return (
-    <Fragment>
-      <label htmlFor={name}>{label}</label>
-      <span className="error">{submitError ? submitError : error}</span>
-      <textarea
-        className={error ? "error" : ""}
-        name={name}
-        rows={rows}
-        placeholder={placeholder}
-        value={value}
-        onChange={onValueChange}
-        onBlur={handleError}
-      />
-    </Fragment>
-  );
-};
 
 export default App;
