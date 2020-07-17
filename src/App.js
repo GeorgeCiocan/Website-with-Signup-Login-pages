@@ -3,10 +3,10 @@ import {
   BrowserRouter as Router,
   Switch,
   Route,
-  Link,
   Redirect,
   useLocation,
 } from "react-router-dom";
+import Navbar from "./Navbar";
 import Home from "./Home";
 import Signup from "./Signup";
 import Login from "./Login";
@@ -17,45 +17,11 @@ import { UserContext, UserProvider } from "./Context/AuthenticatedContext";
 import "./App.css";
 
 function App() {
-  const token = null;
-
   return (
     <Router>
       <div className="App">
-        <nav>
-          <Link to="/">
-            <strong>#ce zici?</strong>
-          </Link>
-          <ul className="navbar">
-            <li>
-              <Link to="/">Home</Link>
-            </li>
-            {token && (
-              <li>
-                <Link to="/newpost">New Post</Link>
-              </li>
-            )}
-            {token && (
-              <li>
-                <Link to="/settings">Profile settings</Link>
-              </li>
-            )}
-            {!token && (
-              <li>
-                <Link to="/signup">Sign up</Link>
-              </li>
-            )}
-            {!token && (
-              <li>
-                <Link to="/login">Login</Link>
-              </li>
-            )}
-          </ul>
-        </nav>
-
-        {/* A <Switch> looks through its children <Route>s and
-            renders the first one that matches the current URL. */}
         <UserProvider>
+          <Navbar />
           <Switch>
             <Route path="/login">
               <Login />
